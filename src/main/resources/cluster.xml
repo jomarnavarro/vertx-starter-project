@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <properties>
+        <property name="hazelcast.mancenter.enabled">false</property>
+        <property name="hazelcast.memcache.enabled">false</property>
+        <property name="hazelcast.rest.enabled">false</property>
+        <property name="hazelcast.wait.seconds.before.join">0</property>
+    </properties>
+
+    <group>
+        <name>jresendiz</name>
+        <password>pass</password>
+    </group>
+    <management-center enabled="true">http://localhost:8080/mancenter</management-center>
+    <network>
+        <port auto-increment="true" port-count="10000">5701</port>
+        <outbound-ports>
+            <ports>0</ports>
+        </outbound-ports>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="false">
+                <interface>192.168.1.28</interface>
+            </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <region>us-west-1</region>
+                <host-header>ec2.amazonaws.com</host-header>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+            </aws>
+        </join>
+        <interfaces enabled="false">
+            <interface>10.10.1.*</interface>
+        </interfaces>
+        <ssl enabled="false"/>
+    </network>
+    <partition-group enabled="false"/>
+    <executor-service name="default">
+        <pool-size>16</pool-size>
+        <queue-capacity>0</queue-capacity>
+    </executor-service>
+    <multimap name="__vertx.subs">
+        <backup-count>1</backup-count>
+    </multimap>
+    <map name="VERTICLES_MAP">
+        <backup-count>2</backup-count>
+    </map>
+    <map name="__vertx.haInfo">
+        <backup-count>1</backup-count>
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <max-idle-seconds>0</max-idle-seconds>
+        <eviction-policy>NONE</eviction-policy>
+        <max-size policy="PER_NODE">0</max-size>
+        <eviction-percentage>25</eviction-percentage>
+        <merge-policy>com.hazelcast.map.merge.LatestUpdateMapMergePolicy</merge-policy>
+    </map>
+
+    <!-- Used internally in Vert.x to implement async locks -->
+    <semaphore name="__vertx.*">
+        <initial-permits>1</initial-permits>
+    </semaphore>
+</hazelcast>
