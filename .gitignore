@@ -167,3 +167,4 @@ nbdist/
 log/
 .docker-volumes/
 .local-config/
+src/main/resources/webroot/node_modules/
