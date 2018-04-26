@@ -3,6 +3,7 @@ plugins {
     id 'groovy'
     id 'application'
     id 'com.github.johnrengelman.shadow' version '2.0.1'
+    id "com.moowork.node" version "1.2.0"
 }
 
 ext {
@@ -42,13 +43,26 @@ dependencies {
     testCompile 'cglib:cglib-nodep:3.2.5'
 }
 
+node {
+    version = '6.4.0'
+    npmVersion = '3.10.3'
+    distBaseUrl = 'https://nodejs.org/dist'
+    download = true
+    workDir = file("${project.buildDir}/nodejs")
+    nodeModulesDir = file("${project.projectDir}")
+}
+
+npmInstall {
+    args = ['--prefix', 'src/main/resources/webroot']
+}
+
 mainClassName = "io.vertx.core.Launcher"
-def mainVerticleName = "mx.jresendiz.JavaVerticle"
+def mainVerticleName = "mx.jresendiz.SimpleChat"
 
 shadowJar {
     classifier = 'fat'
-    manifest{
-        attributes 'Main-Verticle': 'mx.jresendiz.JavaVerticle'
+    manifest {
+        attributes 'Main-Verticle': 'mx.jresendiz.SimpleChat'
     }
     mergeServiceFiles {
         include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
