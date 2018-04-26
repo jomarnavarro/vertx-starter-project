@@ -3,7 +3,6 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                                http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.10.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config">
-
     <group>
         <name>jresendiz</name>
         <password>pass</password>
@@ -11,7 +10,7 @@
 
     <network>
         <cluster-members>
-            <address>127.0.0.1:5701</address>
+            <address>127.0.0.1</address>
         </cluster-members>
     </network>
 </hazelcast-client>
