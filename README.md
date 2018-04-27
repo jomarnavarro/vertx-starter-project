@@ -169,8 +169,7 @@ $ ./gradlew npmInstall
         var currentMessage = {};
         currentMessage.username = localStorage.getItem("username") || "anonymous";
         currentMessage.content = $("#content").val() || " -- -- -- -- -- --";
-        eventBus.send("sendMessage", currentMessage);
-        //drawMessage(currentMessage);
+        eventBus.send("sendMessage", currentMessage);        
         $('#content').val("");
     }
 </script>
