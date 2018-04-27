@@ -85,19 +85,12 @@ $ ./gradlew npmInstall
         <div class="collapse navbar-collapse">
             <form class="navbar-form navbar-nav" role="search">
                 <div class="form-group">
+                    <input type="text" id="username" class="form-control" disabled>
                     <input type="text" id="content" class="form-control" placeholder="What do you wanna say?">
                 </div>
                 <button id="send" class="btn btn-default">Send</button>
                 <button id="clear" class="btn btn-danger">Clear</button>
             </form>
-            <ul class="nav navbar-nav navbar-right">
-                Number of messages:
-                <p id="numberOfMessages">0</p>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                Current online:
-                <p id="currentOnline">0</p>
-            </ul>
         </div>
     </div>
 </nav>
@@ -129,28 +122,27 @@ $ ./gradlew npmInstall
 
 ```html
 <script>
+    $(document).ready(function () {
+        if (!localStorage.getItem("username")) {
+            localStorage.setItem("username", window.navigator.appCodeName + "-" + parseInt(Math.random() * 100));
+        }
+        $("#username").val(localStorage.getItem("username"));
+    });
     var eventBus = new EventBus("http://localhost:8080/chat");
-    eventBus.onopen = function () {
-        eventBus.registerHandler("numberOfMessages", function (err, message) {
-            $("#numberOfMessages").html(message.body.counter);
-        });
-        eventBus.registerHandler("newMessage", function (err, message) {
-            var content = "<div class='row'>" +
-                "<div class=\"btn-group btn-group-xs\" role=\"group\" aria-label=\"...\" style=\"width:100% !important;\">" +
-                "<button type=\"button\" class=\"btn btn-default\" style=\"width:20% !important;\">" + message.body.username + "</button>" +
-                "<button type=\"button\" class=\"btn btn-default\" style=\"width:80% !important;\">" + message.body.content + "</button>" +
-                "</div>" +
-                "</div>";
-            $("#wall").append(content);
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-        eventBus.registerHandler("online", function (err, message) {
-            $("#currentOnline").html(message.body.online);
-        });
+    function drawMessage(message) {
+        var content = "<div class='row'>" +
+            "<div class=\"btn-group btn-group-xs\" role=\"group\" aria-label=\"...\" style=\"width:100% !important;\">" +
+            "<button type=\"button\" class=\"btn btn-default\" style=\"width:20% !important;\">" + message.body.username + "</button>" +
+            "<button type=\"button\" class=\"btn btn-default\" style=\"width:80% !important;\">" + message.body.content + "</button>" +
+            "</div>" +
+            "</div>";
+        $("#wall").append(content);
+    }
 
-        eventBus.registerHandler("clearWall", function (err, message) {
-            $("#wall").html("");
-            window.scrollTo(0, 0);
+    eventBus.onopen = function () {
+        eventBus.registerHandler("newMessage", function (err, message) {
+            drawMessage(message);
+            window.scrollTo(0, document.body.scrollHeight);
         });
     };
     $("#clear").on("click", function (event) {
@@ -160,18 +152,21 @@ $ ./gradlew npmInstall
     });
     $("#send").on("keyup", function (event) {
         if (event.keyCode == 13 || event.which == 13) {
-            send()
+            send();
+            $('#content').val("");
         }
     });
     $("#send").on("click", function (event) {
         event.preventDefault();
         send();
+        $('#content').val("");
     });
     function send() {
         var currentMessage = {};
-        currentMessage.agent = window.navigator.appCodeName || "anonymous";
+        currentMessage.username = localStorage.getItem("username") || "anonymous";
         currentMessage.content = $("#content").val() || " -- -- -- -- -- --";
         eventBus.send("sendMessage", currentMessage);
+        drawMessage(currentMessage);
         $('#content').val("");
     }
 </script>
@@ -184,23 +179,21 @@ $ ./gradlew npmInstall
 import io.vertx.core.eventbus.EventBus
 import io.vertx.ext.bridge.BridgeEventType
 import io.vertx.ext.web.handler.sockjs.SockJSHandler
-import java.util.concurrent.atomic.AtomicInteger
 ```
  
- * We have now to have fun with the event bus, also, we need to know how many are connected and the number of messages. Consider the next code, this should be pasted just bellow the ``` Router router; ``` declaration.
+ * We will have fun with the event bus. Consider the next code, this should be pasted just bellow the ``` class``` declaration (As instance variables).
   
 ```groovy
 HttpServer server;
 Router router;
 EventBus eventBus;
-AtomicInteger messageCounter = new AtomicInteger();
-AtomicInteger online = new AtomicInteger();
 final Integer VERTX_PORT = (System.getenv("PORT") ? System.getenv("PORT") : "8080") as Integer
 ```
  
 * The body of the ```start()``` method must be updated. First of all we have to access the eventbus and create the restrictions of it. This must be the new body.
  
 ```groovy
+// This method is called whenever a verticle starts
 // This method is called whenever you create a verticle
 server = vertx.createHttpServer()
 eventBus = vertx.eventBus();
@@ -211,21 +204,11 @@ def options = [
         ],
         outboundPermitteds: [
                 [address: "newMessage"],
-                [address: "numberOfMessages"],
-                [address: "online"],
-                [address: "clearWall"],
         ],
         heartbeatInterval : 2000
 ]
 // Define the handler for the websockets
 SockJSHandler sockJSHandler = SockJSHandler.create(vertx).bridge(options, { eventHandler ->
-    // We use the handler to know when a websocket was created or removed
-    if (eventHandler.type() == BridgeEventType.SOCKET_CREATED) {
-        online.incrementAndGet();
-    }
-    if (eventHandler.type() == BridgeEventType.SOCKET_CLOSED) {
-        online.decrementAndGet();
-    }
     if (eventHandler.type() == BridgeEventType.SOCKET_CLOSED || eventHandler.type() == BridgeEventType.SOCKET_CREATED) {
         eventBus.publish("newMessage", [username: "Bot", content: "Siento un disturbio en la fuerza..."])
     }
@@ -241,24 +224,10 @@ server.requestHandler(router.&accept).listen(VERTX_PORT, "0.0.0.0")
 // Register handlers to event bus
 eventBus.consumer("sendMessage").handler({ message ->
     JsonObject messageBody = (JsonObject) message.body();
-    messageBody.put("username", "${System.getProperty("user.name")} - ${messageBody.getString("agent")}");
     eventBus.publish("newMessage", messageBody);
-    messageCounter.getAndIncrement()
-    eventBus.publish("numberOfMessages", [counter: messageCounter.intValue()]);
 });
-// We need to know how many messages has been sent and the current users online
-vertx.setPeriodic(1000, { handler ->
-    eventBus.publish("numberOfMessages", [counter: messageCounter.intValue()]);
-    eventBus.send("online", [online: online.intValue()])
-});
-// Clearing the messages in the wall ...
-vertx.setPeriodic(1000, { handler ->
-    if (messageCounter.intValue() > 50) {
-        messageCounter.getAndSet(1)
-        eventBus.publish("clearWall", [message: "clearing the wall"])
-        eventBus.publish("newMessage", [username: "Bot", content: "Es sano limpiar la pared de vez en cuando ..."])
-    }
-})
+
+log.info("Verticle has started!!")
  ```
 
 * Now we can take a look to [http://localhost:8080](http://localhost:8080/) and see what's happening
