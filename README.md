@@ -194,7 +194,6 @@ final Integer VERTX_PORT = (System.getenv("PORT") ? System.getenv("PORT") : "808
 * The body of the ```start()``` method must be updated. First of all we have to access the eventbus and create the restrictions of it. This must be the new body.
  
 ```groovy
-// This method is called whenever a verticle starts
 // This method is called whenever you create a verticle
 server = vertx.createHttpServer()
 eventBus = vertx.eventBus();
@@ -229,10 +228,11 @@ eventBus.consumer("sendMessage").handler({ message ->
 });
 
 log.info("Verticle has started!!")
- ```
+```
 
 * Now we can take a look to [http://localhost:8080](http://localhost:8080/) and see what's happening
 
+> Don't forget to set your environment variable called _LOCAL_IP_. Consider the next command and update the value `export LOCAL_IP=YOUR_LOCAL_IP`.
 > If you can't see the page, try killing the ```./gradlew run``` and run the application again.
 
 ----------
