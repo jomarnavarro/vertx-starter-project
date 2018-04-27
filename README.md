@@ -124,16 +124,20 @@ $ ./gradlew npmInstall
 <script>
     $(document).ready(function () {
         if (!localStorage.getItem("username")) {
-            localStorage.setItem("username", window.navigator.appCodeName + "-" + parseInt(Math.random() * 100));
+            localStorage.setItem("username", (window.navigator.appCodeName).substr(0, 3) + "-" + parseInt(Math.random() * 100));
         }
         $("#username").val(localStorage.getItem("username"));
     });
     var eventBus = new EventBus("http://localhost:8080/chat");
-    function drawMessage(message) {
+    function drawMessage(receivedMessage) {
+        var message = receivedMessage.body || receivedMessage;
+        var now = new Date();
+        message.date = now.getHours() + ":" + now.getMinutes();
         var content = "<div class='row'>" +
             "<div class=\"btn-group btn-group-xs\" role=\"group\" aria-label=\"...\" style=\"width:100% !important;\">" +
-            "<button type=\"button\" class=\"btn btn-default\" style=\"width:20% !important;\">" + message.body.username + "</button>" +
-            "<button type=\"button\" class=\"btn btn-default\" style=\"width:80% !important;\">" + message.body.content + "</button>" +
+            "<button type=\"button\" class=\"btn btn-default\" style=\"width:10% !important; font-size:x-small;\">" + message.date + "</button>" +
+            "<button type=\"button\" class=\"btn btn-default\" style=\"width:20% !important;\">" + message.username + "</button>" +
+            "<button type=\"button\" class=\"btn btn-default\" style=\"width:70% !important;\">" + message.content + "</button>" +
             "</div>" +
             "</div>";
         $("#wall").append(content);
@@ -142,7 +146,7 @@ $ ./gradlew npmInstall
     eventBus.onopen = function () {
         eventBus.registerHandler("newMessage", function (err, message) {
             drawMessage(message);
-            window.scrollTo(0, document.body.scrollHeight);
+            window.scrollTo(0, 0);
         });
     };
     $("#clear").on("click", function (event) {
@@ -166,7 +170,7 @@ $ ./gradlew npmInstall
         currentMessage.username = localStorage.getItem("username") || "anonymous";
         currentMessage.content = $("#content").val() || " -- -- -- -- -- --";
         eventBus.send("sendMessage", currentMessage);
-        drawMessage(currentMessage);
+        //drawMessage(currentMessage);
         $('#content').val("");
     }
 </script>
