@@ -177,6 +177,7 @@ $ ./gradlew npmInstall
 
 ```groovy
 import io.vertx.core.eventbus.EventBus
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.bridge.BridgeEventType
 import io.vertx.ext.web.handler.sockjs.SockJSHandler
 ```
