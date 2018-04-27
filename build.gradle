@@ -35,8 +35,6 @@ dependencies {
     compile "io.vertx:vertx-web-api-contract:$vertxVersion"
     compile "io.vertx:vertx-hazelcast:$vertxVersion"
 
-    compile 'com.hazelcast:hazelcast-client:3.8.2'
-
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile "io.vertx:vertx-unit:${vertxVersion}"
     testCompile 'junit:junit:4.12'
@@ -76,9 +74,14 @@ def doOnChange = './gradlew classes'
 run {
     systemProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
     systemProperty("hazelcast.logging.type", "log4j")
-    systemProperty("hazelcast.client.config", "src/main/resources/hazelcast-client.xml")
     systemProperty("hazelcast.config", "src/main/resources/cluster.xml")
-    args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange", "-cluster"]
+    systemProperty("vertx.cluster.public.host", System.getenv("LOCAL_IP"))
+    args = ['run', mainVerticleName,
+            "--redeploy=$watchForChange",
+            "--launcher-class=$mainClassName",
+            "--on-redeploy=$doOnChange",
+            "-cluster",
+            "-cluster-host ${System.getenv("LOCAL_IP")}"]
 }
 
 task wrapper(type: Wrapper) {
