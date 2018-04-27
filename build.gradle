@@ -69,7 +69,7 @@ shadowJar {
 
 def watchForChange = 'src/**/*.*'
 def doOnChange = './gradlew classes'
-
+def clusterHost = System.getenv("LOCAL_IP").trim();
 
 run {
     systemProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
@@ -77,11 +77,11 @@ run {
     systemProperty("hazelcast.config", "src/main/resources/cluster.xml")
     systemProperty("vertx.cluster.public.host", System.getenv("LOCAL_IP"))
     args = ['run', mainVerticleName,
+            "-cluster",
+            "-cluster-host$clusterHost",
             "--redeploy=$watchForChange",
             "--launcher-class=$mainClassName",
-            "--on-redeploy=$doOnChange",
-            "-cluster",
-            "-cluster-host ${System.getenv("LOCAL_IP")}"]
+            "--on-redeploy=$doOnChange"]
 }
 
 task wrapper(type: Wrapper) {
